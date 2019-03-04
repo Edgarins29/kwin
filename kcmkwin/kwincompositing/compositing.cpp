@@ -32,6 +32,12 @@
 #include <QHash>
 #include <QDebug>
 
+#include "config-kwin.h"
+
+#ifdef HAVE_VULKAN
+#  include "vulkandevicemodel.h"
+#endif
+
 namespace KWin {
 namespace Compositing {
 
@@ -42,20 +48,29 @@ Compositing::Compositing(QObject *parent)
     , m_glScaleFilter(0)
     , m_xrScaleFilter(false)
     , m_glSwapStrategy(0)
+    , m_vkDevice(0)
+    , m_vkVSync(1)
     , m_compositingType(0)
     , m_compositingEnabled(true)
     , m_changed(false)
     , m_openGLPlatformInterfaceModel(new OpenGLPlatformInterfaceModel(this))
     , m_openGLPlatformInterface(0)
     , m_windowsBlockCompositing(true)
+    , m_vulkanDeviceModel(nullptr)
     , m_compositingInterface(new OrgKdeKwinCompositingInterface(QStringLiteral("org.kde.KWin"), QStringLiteral("/Compositor"), QDBusConnection::sessionBus(), this))
 {
+#ifdef HAVE_VULKAN
+    m_vulkanDeviceModel = new VulkanDeviceModel(this);
+#endif
+
     reset();
     connect(this, &Compositing::animationSpeedChanged,       this, &Compositing::changed);
     connect(this, &Compositing::windowThumbnailChanged,      this, &Compositing::changed);
     connect(this, &Compositing::glScaleFilterChanged,        this, &Compositing::changed);
     connect(this, &Compositing::xrScaleFilterChanged,        this, &Compositing::changed);
     connect(this, &Compositing::glSwapStrategyChanged,       this, &Compositing::changed);
+    connect(this, &Compositing::vkDeviceChanged,             this, &Compositing::changed);
+    connect(this, &Compositing::vkVSyncChanged,              this, &Compositing::changed);
     connect(this, &Compositing::compositingTypeChanged,      this, &Compositing::changed);
     connect(this, &Compositing::compositingEnabledChanged,   this, &Compositing::changed);
     connect(this, &Compositing::openGLPlatformInterfaceChanged, this, &Compositing::changed);
@@ -93,11 +108,39 @@ void Compositing::reset()
     };
     setGlSwapStrategy(swapStrategy());
 
+#ifdef HAVE_VULKAN
+    const QStringList device = kwinConfig.readEntry("VulkanDevice", QStringList());
+    int row = -1;
+    if (device.count() == 3) {
+        uint32_t index = 0, vendorId = 0, deviceId = 0;
+        bool ok = true;
+
+        if (ok) index = device.at(0).toUInt(&ok, 0);
+        if (ok) vendorId = device.at(1).toUInt(&ok, 0);
+        if (ok) deviceId = device.at(2).toUInt(&ok, 0);
+
+        if (ok) {
+            row = m_vulkanDeviceModel->indexOf(index, vendorId, deviceId);
+        }
+    }
+    setVkDevice(row != -1 ? row : 0);
+#endif
+
+    const QString vulkanVSync = kwinConfig.readEntry("VulkanVSync", "Doublebuffer");
+    if (vulkanVSync == "Off")
+        setVkVSync(0);
+    else if (vulkanVSync == "Triplebuffer")
+        setVkVSync(2);
+    else
+        setVkVSync(1);
+
     auto type = [&kwinConfig]{
         const QString backend = kwinConfig.readEntry("Backend", "OpenGL");
         const bool glCore = kwinConfig.readEntry("GLCore", false);
 
-        if (backend == QStringLiteral("OpenGL")) {
+        if (backend == QStringLiteral("Vulkan")) {
+            return CompositingType::VULKAN_INDEX;
+        } else if (backend == QStringLiteral("OpenGL")) {
             if (glCore) {
                 return CompositingType::OPENGL31_INDEX;
             } else {
@@ -124,6 +167,8 @@ void Compositing::defaults()
     setGlScaleFilter(2);
     setXrScaleFilter(false);
     setGlSwapStrategy(1);
+    setVkDevice(0);
+    setVkVSync(1);
     setCompositingType(CompositingType::OPENGL20_INDEX);
     const QModelIndex index = m_openGLPlatformInterfaceModel->indexForKey(QStringLiteral("glx"));
     setOpenGLPlatformInterface(index.isValid() ? index.row() : 0);
@@ -188,6 +233,16 @@ int Compositing::glSwapStrategy() const
     return m_glSwapStrategy;
 }
 
+int Compositing::vkDevice() const
+{
+    return m_vkDevice;
+}
+
+int Compositing::vkVSync() const
+{
+    return m_vkVSync;
+}
+
 int Compositing::compositingType() const
 {
     return m_compositingType;
@@ -223,6 +278,24 @@ void Compositing::setGlSwapStrategy(int strategy)
     }
     m_glSwapStrategy = strategy;
     emit glSwapStrategyChanged(strategy);
+}
+
+void Compositing::setVkDevice(int device)
+{
+    if (device == m_vkDevice) {
+        return;
+    }
+    m_vkDevice = device;
+    emit vkDeviceChanged(device);
+}
+
+void Compositing::setVkVSync(int vsync)
+{
+    if (vsync == m_vkVSync) {
+        return;
+    }
+    m_vkVSync = vsync;
+    emit vkVSyncChanged(vsync);
 }
 
 void Compositing::setWindowThumbnail(int index)
@@ -291,9 +364,34 @@ void Compositing::save()
         }
     };
     kwinConfig.writeEntry("GLPreferBufferSwap", swapStrategy());
+#ifdef HAVE_VULKAN
+    uint32_t index, vendorId, deviceId;
+    if (m_vulkanDeviceModel->deviceAt(vkDevice(), &index, &vendorId, &deviceId)) {
+        const QStringList entry = QStringList() << QString::number(index)
+                                                << QStringLiteral("0x") + QString::number(vendorId)
+                                                << QStringLiteral("0x") + QString::number(deviceId);
+        kwinConfig.writeEntry("VulkanDevice", entry);
+    }
+#endif
+    switch (vkVSync()) {
+    case 0:
+        kwinConfig.writeEntry("VulkanVSync", "Off");
+        break;
+    default:
+    case 1:
+        kwinConfig.writeEntry("VulkanVSync", "Doublebuffer");
+        break;
+    case 2:
+        kwinConfig.writeEntry("VulkanVSync", "Triplebuffer");
+        break;
+    }
     QString backend;
     bool glCore = false;
     switch (compositingType()) {
+    case CompositingType::VULKAN_INDEX:
+        backend = "Vulkan";
+        glCore = false;
+        break;
     case CompositingType::OPENGL31_INDEX:
         backend = "OpenGL";
         glCore = true;
@@ -327,6 +425,11 @@ void Compositing::save()
 OpenGLPlatformInterfaceModel *Compositing::openGLPlatformInterfaceModel() const
 {
     return m_openGLPlatformInterfaceModel;
+}
+
+VulkanDeviceModel *Compositing::vulkanDeviceModel() const
+{
+    return m_vulkanDeviceModel;
 }
 
 int Compositing::openGLPlatformInterface() const
@@ -375,6 +478,7 @@ void CompositingType::generateCompositing()
 {
     QHash<QString, CompositingType::CompositingTypeIndex> compositingTypes;
 
+    compositingTypes[i18n("Vulkan")] = CompositingType::VULKAN_INDEX;
     compositingTypes[i18n("OpenGL 3.1")] = CompositingType::OPENGL31_INDEX;
     compositingTypes[i18n("OpenGL 2.0")] = CompositingType::OPENGL20_INDEX;
     compositingTypes[i18n("XRender")] = CompositingType::XRENDER_INDEX;

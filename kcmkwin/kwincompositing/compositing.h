@@ -31,6 +31,7 @@ namespace KWin {
 namespace Compositing {
 
 class OpenGLPlatformInterfaceModel;
+class VulkanDeviceModel;
 
 class Compositing : public QObject
 {
@@ -41,6 +42,7 @@ class Compositing : public QObject
     Q_PROPERTY(int glScaleFilter READ glScaleFilter WRITE setGlScaleFilter NOTIFY glScaleFilterChanged)
     Q_PROPERTY(bool xrScaleFilter READ xrScaleFilter WRITE setXrScaleFilter NOTIFY xrScaleFilterChanged)
     Q_PROPERTY(int glSwapStrategy READ glSwapStrategy WRITE setGlSwapStrategy NOTIFY glSwapStrategyChanged)
+    Q_PROPERTY(int vkVSync READ vkVSync WRITE setVkVSync NOTIFY vkVSyncChanged)
     Q_PROPERTY(int compositingType READ compositingType WRITE setCompositingType NOTIFY compositingTypeChanged)
     Q_PROPERTY(bool compositingEnabled READ compositingEnabled WRITE setCompositingEnabled NOTIFY compositingEnabledChanged)
     Q_PROPERTY(KWin::Compositing::OpenGLPlatformInterfaceModel *openGLPlatformInterfaceModel READ openGLPlatformInterfaceModel CONSTANT)
@@ -58,6 +60,8 @@ public:
     int glScaleFilter() const;
     bool xrScaleFilter() const;
     int glSwapStrategy() const;
+    int vkDevice() const;
+    int vkVSync() const;
     int compositingType() const;
     bool compositingEnabled() const;
     int openGLPlatformInterface() const;
@@ -65,12 +69,15 @@ public:
     bool compositingRequired() const;
 
     OpenGLPlatformInterfaceModel *openGLPlatformInterfaceModel() const;
+    VulkanDeviceModel *vulkanDeviceModel() const;
 
     void setAnimationSpeed(int speed);
     void setWindowThumbnail(int index);
     void setGlScaleFilter(int index);
     void setXrScaleFilter(bool filter);
     void setGlSwapStrategy(int strategy);
+    void setVkDevice(int device);
+    void setVkVSync(int vsync);
     void setCompositingType(int index);
     void setCompositingEnabled(bool enalbed);
     void setOpenGLPlatformInterface(int interface);
@@ -89,6 +96,8 @@ Q_SIGNALS:
     void glScaleFilterChanged(int);
     void xrScaleFilterChanged(int);
     void glSwapStrategyChanged(int);
+    void vkDeviceChanged(int);
+    void vkVSyncChanged(int);
     void compositingTypeChanged(int);
     void compositingEnabledChanged(bool);
     void openGLPlatformInterfaceChanged(int);
@@ -100,6 +109,8 @@ private:
     int m_glScaleFilter;
     bool m_xrScaleFilter;
     int m_glSwapStrategy;
+    int m_vkDevice;
+    int m_vkVSync;
     int m_compositingType;
     bool m_compositingEnabled;
     bool m_changed;
@@ -107,6 +118,7 @@ private:
     int m_openGLPlatformInterface;
     bool m_windowsBlockCompositing;
     bool m_windowsBlockingCompositing;
+    VulkanDeviceModel *m_vulkanDeviceModel;
     OrgKdeKwinCompositingInterface *m_compositingInterface;
 };
 
@@ -122,7 +134,8 @@ class CompositingType : public QAbstractItemModel
 public:
 
     enum CompositingTypeIndex {
-        OPENGL31_INDEX = 0,
+        VULKAN_INDEX = 0,
+        OPENGL31_INDEX,
         OPENGL20_INDEX,
         XRENDER_INDEX
     };

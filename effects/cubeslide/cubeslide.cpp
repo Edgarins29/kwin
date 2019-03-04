@@ -58,7 +58,7 @@ CubeSlideEffect::~CubeSlideEffect()
 
 bool CubeSlideEffect::supported()
 {
-    return effects->isOpenGLCompositing() && effects->animationsSupported();
+    return (effects->isOpenGLCompositing() || effects->compositingType() == VulkanCompositing) && effects->animationsSupported();
 }
 
 void CubeSlideEffect::reconfigure(ReconfigureFlags)
@@ -87,18 +87,39 @@ void CubeSlideEffect::prePaintScreen(ScreenPrePaintData& data, int time)
 
 void CubeSlideEffect::paintScreen(int mask, QRegion region, ScreenPaintData& data)
 {
+<<<<<<< HEAD:effects/cubeslide/cubeslide.cpp
     if (isActive()) {
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
+=======
+    if (!slideRotations.empty()) {
+        mask |= PAINT_SCREEN_WITH_FACE_CULLING;
+
+        data.setCullMode(CullModeFlag::Front);
+>>>>>>> fredrik/vulkan:effects/cube/cubeslide.cpp
         paintSlideCube(mask, region, data);
-        glCullFace(GL_BACK);
+
+        data.setCullMode(CullModeFlag::Back);
         paintSlideCube(mask, region, data);
+<<<<<<< HEAD:effects/cubeslide/cubeslide.cpp
         glDisable(GL_CULL_FACE);
         // Paint an extra screen with 'sticky' windows.
         if (!staticWindows.isEmpty()) {
             stickyPainting = true;
             effects->paintScreen(mask, region, data);
             stickyPainting = false;
+=======
+
+        if (dontSlidePanels) {
+            foreach (EffectWindow * w, panels) {
+                WindowPaintData wData(w);
+                effects->paintWindow(w, 0, infiniteRegion(), wData);
+            }
+        }
+        foreach (EffectWindow * w, stickyWindows) {
+            WindowPaintData wData(w);
+            effects->paintWindow(w, 0, infiniteRegion(), wData);
+>>>>>>> fredrik/vulkan:effects/cube/cubeslide.cpp
         }
     } else
         effects->paintScreen(mask, region, data);

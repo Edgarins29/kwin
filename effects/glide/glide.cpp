@@ -57,7 +57,12 @@ GlideEffect::~GlideEffect() = default;
 
 void GlideEffect::reconfigure(ReconfigureFlags flags)
 {
+<<<<<<< HEAD
     Q_UNUSED(flags)
+=======
+    return (effects->isOpenGLCompositing() || effects->compositingType() == VulkanCompositing) && effects->animationsSupported();
+}
+>>>>>>> fredrik/vulkan
 
     GlideConfig::self()->read();
     m_duration = std::chrono::milliseconds(animationTime<GlideConfig>(160));

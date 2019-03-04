@@ -64,17 +64,26 @@ public:
     }
     xcb_window_t rootWindow() const;
 
+    xcb_visualid_t visual() const {
+        return m_screen->root_visual;
+    }
+
     Screens *createScreens(QObject *parent = nullptr) override;
     OpenGLBackend *createOpenGLBackend() override;
     QPainterBackend* createQPainterBackend() override;
+    VulkanBackend* createVulkanBackend() override;
     void warpPointer(const QPointF &globalPos) override;
 
+<<<<<<< HEAD
     QVector<CompositingType> supportedCompositors() const override {
         if (selectedCompositor() != NoCompositing) {
             return {selectedCompositor()};
         }
         return QVector<CompositingType>{OpenGLCompositing, QPainterCompositing};
     }
+=======
+    QVector<CompositingType> supportedCompositors() const override;
+>>>>>>> fredrik/vulkan
 
 Q_SIGNALS:
     void sizeChanged();

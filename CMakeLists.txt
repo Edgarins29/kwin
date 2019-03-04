@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
 
 project(KWIN)
 set(PROJECT_VERSION "5.15.80")
@@ -161,6 +161,17 @@ set_package_properties(epoxy PROPERTIES DESCRIPTION "libepoxy"
                        PURPOSE "OpenGL dispatch library"
                       )
 
+find_package(Vulkan)
+set_package_properties(Vulkan PROPERTIES DESCRIPTION "Vulkan"
+                       URL "https://www.khronos.org/vulkan"
+                       TYPE RUNTIME
+                       PURPOSE "Graphics and compute API"
+                      )
+
+if (Vulkan_FOUND)
+    set(HAVE_VULKAN TRUE)
+endif()
+
 set(HAVE_DL_LIBRARY FALSE)
 if(epoxy_HAS_GLX)
     find_library(DL_LIBRARY dl)
@@ -169,7 +180,7 @@ if(epoxy_HAS_GLX)
     endif()
 endif()
 
-find_package(Wayland 1.2 REQUIRED COMPONENTS Cursor OPTIONAL_COMPONENTS Egl)
+find_package(Wayland 1.2 REQUIRED COMPONENTS Cursor Server OPTIONAL_COMPONENTS Egl)
 set_package_properties(Wayland PROPERTIES
                        TYPE REQUIRED
                        PURPOSE "Required for building KWin with Wayland support"

@@ -161,6 +161,19 @@ void KWinCompositingSettings::init()
         }
     );
 
+    // Vulkan device
+    if (auto *model = m_compositing->vulkanDeviceModel()) {
+        m_form.vulkanDevice->setModel((QAbstractItemModel *) model);
+        m_form.vulkanDevice->setCurrentIndex(m_compositing->vkDevice());
+    }
+    connect(m_compositing, &Compositing::vkDeviceChanged, m_form.vulkanDevice, &QComboBox::setCurrentIndex);
+    connect(m_form.vulkanDevice, currentIndexChangedSignal, m_compositing, &Compositing::setVkDevice);
+
+    // Vulkan V-sync setting
+    m_form.vulkanVSync->setCurrentIndex(m_compositing->vkVSync());
+    connect(m_compositing, &Compositing::vkVSyncChanged, m_form.vulkanVSync, &QComboBox::setCurrentIndex);
+    connect(m_form.vulkanVSync, currentIndexChangedSignal, m_compositing, &Compositing::setVkVSync);
+
     // windowThumbnail
     m_form.windowThumbnail->setCurrentIndex(m_compositing->windowThumbnail());
     connect(m_compositing, &Compositing::windowThumbnailChanged, m_form.windowThumbnail, &QComboBox::setCurrentIndex);
@@ -194,10 +207,41 @@ void KWinCompositingSettings::init()
     );
     auto showHideBasedOnType = [this, type]() {
         const int currentType = type->compositingTypeForIndex(m_form.type->currentIndex());
-        m_form.glScaleFilter->setVisible(currentType != CompositingType::XRENDER_INDEX);
-        m_form.glScaleFilterLabel->setVisible(currentType != CompositingType::XRENDER_INDEX);
+        const bool currentIsOpenGL = currentType == CompositingType::OPENGL31_INDEX ||
+                                     currentType == CompositingType::OPENGL20_INDEX;
+        auto &layout = m_form.formLayout;
+
+        // Remove all backend-specific rows from the form layout
+        for (auto *widget : { m_form.glScaleFilter, m_form.xrScaleFilter, m_form.tearingPrevention, m_form.vulkanDevice, m_form.vulkanVSync }) {
+            if (layout->indexOf(widget) != -1) {
+                layout->takeRow(widget);
+            }
+        }
+
+        // Now insert the rows for the selected backend
+        constexpr int firstRow = 7;
+
+        if (currentIsOpenGL) {
+            layout->insertRow(firstRow + 0, m_form.glScaleFilterLabel,     m_form.glScaleFilter);
+            layout->insertRow(firstRow + 1, m_form.tearingPreventionLabel, m_form.tearingPrevention);
+        } else if (currentType == CompositingType::XRENDER_INDEX) {
+            layout->insertRow(firstRow + 0, m_form.xrScaleFilterLabel,     m_form.xrScaleFilter);
+            layout->insertRow(firstRow + 1, m_form.tearingPreventionLabel, m_form.tearingPrevention);
+        } else if (currentType == CompositingType::VULKAN_INDEX) {
+            layout->insertRow(firstRow + 0, m_form.vulkanDeviceLabel,      m_form.vulkanDevice);
+            layout->insertRow(firstRow + 1, m_form.vulkanVSyncLabel,       m_form.vulkanVSync);
+        }
+
+        m_form.glScaleFilter->setVisible(currentIsOpenGL);
+        m_form.glScaleFilterLabel->setVisible(currentIsOpenGL);
         m_form.xrScaleFilter->setVisible(currentType == CompositingType::XRENDER_INDEX);
         m_form.xrScaleFilterLabel->setVisible(currentType == CompositingType::XRENDER_INDEX);
+        m_form.tearingPrevention->setVisible(currentType != CompositingType::VULKAN_INDEX);
+        m_form.tearingPreventionLabel->setVisible(currentType != CompositingType::VULKAN_INDEX);
+        m_form.vulkanDevice->setVisible(currentType == CompositingType::VULKAN_INDEX);
+        m_form.vulkanDeviceLabel->setVisible(currentType == CompositingType::VULKAN_INDEX);
+        m_form.vulkanVSync->setVisible(currentType == CompositingType::VULKAN_INDEX);
+        m_form.vulkanVSyncLabel->setVisible(currentType == CompositingType::VULKAN_INDEX);
     };
     showHideBasedOnType();
     connect(m_form.type, currentIndexChangedSignal,

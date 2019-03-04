@@ -1596,6 +1596,10 @@ QString Workspace::supportInformation() const
                 support.append(QStringLiteral(" no\n"));
             break;
         }
+        case VulkanCompositing:
+            support.append(QStringLiteral("Compositing Type: Vulkan\n"));
+            // TODO: Add information about the driver and GPU
+            break;
         case XRenderCompositing:
             support.append(QStringLiteral("Compositing Type: XRender\n"));
             break;
@@ -1604,7 +1608,7 @@ QString Workspace::supportInformation() const
             break;
         case NoCompositing:
         default:
-            support.append(QStringLiteral("Something is really broken, neither OpenGL nor XRender is used"));
+            support.append(QStringLiteral("Something is really broken; an unknown compositing type is used"));
         }
         support.append(QStringLiteral("\nLoaded Effects:\n"));
         support.append(QStringLiteral(  "---------------\n"));

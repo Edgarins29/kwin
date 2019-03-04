@@ -37,15 +37,9 @@ SheetEffect::SheetEffect()
     initConfig<SheetConfig>();
     reconfigure(ReconfigureAll);
 
-<<<<<<< HEAD
     connect(effects, &EffectsHandler::windowAdded, this, &SheetEffect::slotWindowAdded);
     connect(effects, &EffectsHandler::windowClosed, this, &SheetEffect::slotWindowClosed);
     connect(effects, &EffectsHandler::windowDeleted, this, &SheetEffect::slotWindowDeleted);
-=======
-bool SheetEffect::supported()
-{
-    return (effects->isOpenGLCompositing() || effects->compositingType() == VulkanCompositing) && effects->animationsSupported();
->>>>>>> fredrik/vulkan
 }
 
 void SheetEffect::reconfigure(ReconfigureFlags flags)
@@ -154,8 +148,7 @@ bool SheetEffect::isActive() const
 
 bool SheetEffect::supported()
 {
-    return effects->isOpenGLCompositing()
-        && effects->animationsSupported();
+    return (effects->isOpenGLCompositing() || effects->compositingType() == VulkanCompositing) && effects->animationsSupported();
 }
 
 void SheetEffect::slotWindowAdded(EffectWindow *w)

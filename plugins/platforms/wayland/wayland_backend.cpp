@@ -667,13 +667,11 @@ void WaylandBackend::updateWindowTitle()
 
 QVector<CompositingType> WaylandBackend::supportedCompositors() const
 {
-<<<<<<< HEAD
     if (selectedCompositor() != NoCompositing) {
         return {selectedCompositor()};
     }
-=======
+
     QVector<CompositingType> types;
->>>>>>> fredrik/vulkan
 #if HAVE_WAYLAND_EGL
     types << OpenGLCompositing;
 #endif

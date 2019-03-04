@@ -2,7 +2,6 @@
 <qresource prefix="/scenes/opengl">
   <file>shaders/1.10/lanczos-fragment.glsl</file>
   <file>shaders/1.40/lanczos-fragment.glsl</file>
-<<<<<<< HEAD:plugins/scenes/opengl/resources.qrc
 </qresource>
 =======
 
@@ -18,5 +17,4 @@
   <file>shaders/vulkan/updatedecoration_frag.spv</file>
 
   </qresource>
->>>>>>> fredrik/vulkan:resources.qrc
 </RCC>

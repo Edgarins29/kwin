@@ -74,16 +74,17 @@ public:
     VulkanBackend* createVulkanBackend() override;
     void warpPointer(const QPointF &globalPos) override;
 
-<<<<<<< HEAD
+/*
     QVector<CompositingType> supportedCompositors() const override {
         if (selectedCompositor() != NoCompositing) {
             return {selectedCompositor()};
         }
         return QVector<CompositingType>{OpenGLCompositing, QPainterCompositing};
     }
-=======
+    */
+    //ELI: Maybe required for Vulkan
     QVector<CompositingType> supportedCompositors() const override;
->>>>>>> fredrik/vulkan
+
 
 Q_SIGNALS:
     void sizeChanged();

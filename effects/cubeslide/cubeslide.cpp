@@ -87,6 +87,25 @@ void CubeSlideEffect::prePaintScreen(ScreenPrePaintData& data, int time)
 
 void CubeSlideEffect::paintScreen(int mask, QRegion region, ScreenPaintData& data)
 {
+    if (isActive()) {
+        mask |= PAINT_SCREEN_WITH_FACE_CULLING;
+        
+        data.setCullMode(CullModeFlag::Front);
+        paintSlideCube(mask, region, data);
+        
+        data.setCullMode(CullModeFlag::Back);
+        paintSlideCube(mask, region, data);
+        
+         if (!staticWindows.isEmpty()) {
+            stickyPainting = true;
+            effects->paintScreen(mask, region, data);
+            stickyPainting = false;
+         }
+    } else
+        effects->paintScreen(mask, region, data);
+}
+    
+/*
 <<<<<<< HEAD:effects/cubeslide/cubeslide.cpp
     if (isActive()) {
         glEnable(GL_CULL_FACE);
@@ -123,6 +142,7 @@ void CubeSlideEffect::paintScreen(int mask, QRegion region, ScreenPaintData& dat
         }
     } else
         effects->paintScreen(mask, region, data);
+    */
 }
 
 void CubeSlideEffect::paintSlideCube(int mask, QRegion region, ScreenPaintData& data)

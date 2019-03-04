@@ -43,7 +43,11 @@ target_link_libraries(kwincompositing
     kcmkwincommon
 )
 
-<<<<<<< HEAD
+if (Vulkan_FOUND)
+    target_link_libraries(kwincompositing kwinvulkanutils)
+endif()
+
+
 if (BUILD_TESTING)
     include(ECMMarkAsTest)
 
@@ -53,6 +57,10 @@ if (BUILD_TESTING)
         compositing.cpp
         test/effectmodeltest.cpp
         test/modeltest.cpp)
+
+        if (Vulkan_FOUND)
+            set (modelTest_SRC ${modelTest_SRC} vulkandevicemodel.cpp)
+        endif()
 
     qt5_add_dbus_interface(modelTest_SRC
         ${KWIN_SOURCE_DIR}/org.kde.kwin.Compositing.xml kwin_compositing_interface)
@@ -77,51 +85,14 @@ if (BUILD_TESTING)
         kwineffects
         kcmkwincommon
     )
-endif()
-=======
-if (Vulkan_FOUND)
-    target_link_libraries(kwincompositing kwinvulkanutils)
-endif()
-
-set(modelTest_SRC
-    model.cpp
-    effectconfig.cpp
-    compositing.cpp
-    test/effectmodeltest.cpp
-    test/modeltest.cpp)
-
-if (Vulkan_FOUND)
-    set (modelTest_SRC ${modelTest_SRC} vulkandevicemodel.cpp)
+    
+    if (Vulkan_FOUND)
+        target_link_libraries(effectModelTest kwinvulkanutils)
+    endif()
 endif()
 
-qt5_add_dbus_interface( modelTest_SRC
-  ${KWIN_SOURCE_DIR}/org.kde.kwin.Compositing.xml kwin_compositing_interface)
-qt5_add_dbus_interface( modelTest_SRC
-  ${KWIN_SOURCE_DIR}/org.kde.kwin.Effects.xml kwin_effects_interface)
 
-add_executable(effectModelTest ${modelTest_SRC})
-ecm_mark_as_test(effectModelTest)
 
-target_link_libraries(effectModelTest
-    Qt5::Quick
-    Qt5::DBus
-    Qt5::Test
-    Qt5::Widgets
-    KF5::CoreAddons
-    KF5::ConfigCore
-    KF5::Declarative
-    KF5::I18n
-    KF5::Service
-    KF5::KCMUtils
-    KF5::NewStuff
-    kwineffects
-    kwin4_effect_builtins
-)
->>>>>>> fredrik/vulkan
-
-if (Vulkan_FOUND)
-    target_link_libraries(effectModelTest kwinvulkanutils)
-endif()
 
 INSTALL(DIRECTORY qml DESTINATION ${DATA_INSTALL_DIR}/kwincompositing)
 INSTALL(TARGETS kwincompositing DESTINATION ${PLUGIN_INSTALL_DIR})

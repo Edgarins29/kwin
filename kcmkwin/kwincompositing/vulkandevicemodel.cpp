@@ -46,7 +46,8 @@ VulkanDeviceModel::VulkanDeviceModel(QObject *parent)
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
         .pNext = nullptr,
         .pApplicationName = "kcmkwincompositing",
-        .applicationVersion = VK_MAKE_VERSION(KWIN_VERSION_MAJOR, KWIN_VERSION_MINOR, KWIN_VERSION_PATCH),
+//        .applicationVersion = VK_MAKE_VERSION(KWIN_VERSION_MAJOR, KWIN_VERSION_MINOR, KWIN_VERSION_PATCH),
+        .applicationVersion = 0,
         .pEngineName = nullptr,
         .engineVersion = VK_MAKE_VERSION(0, 0, 0),
         .apiVersion = VK_API_VERSION_1_0

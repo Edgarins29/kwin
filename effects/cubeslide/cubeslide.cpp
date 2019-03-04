@@ -142,8 +142,8 @@ void CubeSlideEffect::paintScreen(int mask, QRegion region, ScreenPaintData& dat
         }
     } else
         effects->paintScreen(mask, region, data);
-    */
 }
+    */
 
 void CubeSlideEffect::paintSlideCube(int mask, QRegion region, ScreenPaintData& data)
 {
